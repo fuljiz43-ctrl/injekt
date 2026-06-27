@@ -1,0 +1,3 @@
+dependencies {
+    // no extra deps needed, stdlib already applied by root
+}

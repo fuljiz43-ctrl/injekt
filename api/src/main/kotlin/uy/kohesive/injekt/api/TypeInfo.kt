@@ -31,13 +31,16 @@ interface TypeReference<T> {
 }
 
 abstract class FullTypeReference<T> protected constructor() : TypeReference<T> {
-    override val type: Type = javaClass.getGenericSuperclass().let { superClass ->
-        if (superClass is Class<*>) {
-            throw IllegalArgumentException("Internal error: TypeReference constructed without actual type information")
+    override val type: Type = run {
+        var superClass: Type? = javaClass.genericSuperclass
+        // Walk up the hierarchy to find the ParameterizedType
+        // This handles cases where R8/ProGuard flattens the anonymous class hierarchy
+        while (superClass != null) {
+            if (superClass is ParameterizedType) {
+                return@run superClass.actualTypeArguments[0]
+            }
+            superClass = (superClass as? Class<*>)?.genericSuperclass
         }
-        (superClass as ParameterizedType).getActualTypeArguments()[0]
+        throw IllegalArgumentException("Internal error: TypeReference constructed without actual type information")
     }
 }
-
-
-
